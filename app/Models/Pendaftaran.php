@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Pendaftaran extends Model
+{
+    protected $fillable = [
+        'user_id', 'organisasi_id', 'divisi_id',
+        'alasan', 'cv', 'status', 'jadwal_wawancara'
+    ];
+
+    public function mahasiswa()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function organisasi()
+    {
+        return $this->belongsTo(Organisasi::class);
+    }
+
+    public function divisi()
+    {
+        return $this->belongsTo(Divisi::class);
+    }
+}
+
