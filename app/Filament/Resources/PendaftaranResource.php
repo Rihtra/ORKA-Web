@@ -124,4 +124,8 @@ class PendaftaranResource extends Resource
 
         return $query; // super_admin bisa lihat semua
     }
+     public static function shouldRegisterNavigation(): bool
+{
+    return auth()->user()?->role === 'admin_organisasi';
+}
 }
