@@ -7,12 +7,19 @@ use App\Models\Divisi;
 use App\Models\Organisasi;
 use App\Models\User;
 use Filament\Forms;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Resources\Resource;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\PendaftaranResource\Pages;
+use Illuminate\Database\Eloquent\Model;
 
 class PendaftaranResource extends Resource
 {
@@ -20,78 +27,119 @@ class PendaftaranResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-user-plus';
     protected static ?string $navigationLabel = 'Pendaftaran Mahasiswa';
 
-    public static function form(Form $form): Form
-    {
-        return $form->schema([
-            Forms\Components\Select::make('user_id')
-                ->label('Mahasiswa')
-                ->relationship('user', 'name')
-                ->searchable()
-                ->preload()
-                ->required(),
+   public static function form(Form $form): Form
+{
+    return $form->schema([
+        TextInput::make('nama')->disabled(),
+        TextInput::make('nim')->disabled(),
+        TextInput::make('prodi')->disabled(),
+        TextInput::make('semester')->disabled(),
+        TextInput::make('nomor_wa')->disabled(),
+        Textarea::make('alasan')->label('Alasan Bergabung')->disabled(),
+        Select::make('divisi_id')
+    ->label('Divisi yang Dipilih')
+    ->relationship('divisi', 'nama')
+    ->disabled(),
 
-            Forms\Components\Select::make('organisasi_id')
-                ->label('Organisasi')
-                ->relationship('organisasi', 'nama')
-                ->searchable()
-                ->preload()
-                ->required(),
 
-            Forms\Components\Select::make('divisi_id')
-                ->label('Divisi')
-                ->relationship('divisi', 'nama')
-                ->searchable()
-                ->preload()
-                ->required(),
+        FileUpload::make('cv')
+            ->label('CV / Foto Mahasiswa')
+            ->image()
+            ->directory('cv')
+            ->visibility('public')
+            ->previewable(true)
+            ->downloadable()
+            ->disabled(),
 
-            Forms\Components\Textarea::make('alasan')
-                ->required()
-                ->label('Alasan Bergabung'),
+        Select::make('status')
+            ->options([
+                'pending' => 'Pending',
+                'diterima' => 'Diterima',
+                'ditolak' => 'Ditolak',
+            ])
+            ->disabled(),
 
-            Forms\Components\FileUpload::make('cv')
-                ->label('Upload CV')
-                ->disk('public')
-                ->directory('cv')
-                ->required(),
+        DateTimePicker::make('jadwal_wawancara')
+            ->label('Jadwal Wawancara')
+            ->visible(fn ($record) => $record?->status === 'diterima')
+            ->required(fn ($record) => $record?->status === 'diterima')
+            ->disabled(fn ($record) => $record?->status !== 'diterima'),
+    ]);
+}
 
-            Forms\Components\Select::make('status')
-                ->options([
-                    'pending' => 'Pending',
-                    'diterima' => 'Diterima',
-                    'ditolak' => 'Ditolak',
-                ])
-                ->default('pending')
-                ->required(),
-        ]);
-    }
+
 
     public static function table(Table $table): Table
-    {
-        return $table
-            ->columns([
-                Tables\Columns\TextColumn::make('user.name')->label('Mahasiswa'),
-                Tables\Columns\TextColumn::make('organisasi.nama')->label('Organisasi'),
-                Tables\Columns\TextColumn::make('divisi.nama')->label('Divisi'),
-                Tables\Columns\TextColumn::make('status')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'gray',
-                        'diterima' => 'success',
-                        'ditolak' => 'danger',
-                    }),
-                Tables\Columns\TextColumn::make('created_at')->label('Didaftar')->dateTime(),
-            ])
-            ->filters([])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
-    }
+{
+    return $table
+        ->columns([
+            TextColumn::make('nama'),
+            TextColumn::make('nim'),
+            TextColumn::make('prodi'),
+            TextColumn::make('semester'),
+            TextColumn::make('status')->badge()->color(fn ($state) => match ($state) {
+                'diterima' => 'success',
+                'ditolak' => 'danger',
+                'pending' => 'gray',
+            }),
+            TextColumn::make('divisi.nama')
+    ->label('Divisi')
+    ->sortable()
+    ->searchable(),
+
+        ])
+        
+        ->filters([
+    Tables\Filters\SelectFilter::make('status')
+        ->options([
+            'pending' => 'Pending',
+            'diterima' => 'Diterima',
+            'ditolak' => 'Ditolak',
+        ]),
+])
+
+        ->actions([
+    Tables\Actions\EditAction::make(),
+    Tables\Actions\ViewAction::make(),
+    Tables\Actions\Action::make('Tolak')
+    ->color('danger')
+    ->icon('heroicon-m-x-circle')
+    ->requiresConfirmation()
+    ->action(fn (Model $record) => $record->update(['status' => 'ditolak']))
+    ->visible(fn (Model $record) => $record->status === 'menunggu' || $record->status === 'pending'),
+
+
+    Tables\Actions\Action::make('Terima')
+    ->label('Terima & Atur Jadwal')
+    ->color('success')
+    ->icon('heroicon-m-check')
+    ->form([
+        DateTimePicker::make('jadwal_wawancara')
+            ->label('Jadwal Wawancara')
+            ->required(),
+    ])
+    ->action(function (Model $record, array $data) {
+        $record->update([
+            'status' => 'diterima',
+            'jadwal_wawancara' => $data['jadwal_wawancara'],
+        ]);
+    })
+    ->modalHeading('Konfirmasi Penerimaan & Atur Jadwal')
+    ->requiresConfirmation()
+    ->visible(fn (Model $record) => $record->status === 'pending' || $record->status === 'menunggu'),
+
+])
+        ->bulkActions([
+            Tables\Actions\DeleteBulkAction::make(),
+        ]);
+}
+
      public static function canCreate(): bool
+    {
+        
+        return false;
+    }
+     public static function canEdit(model $function): bool
     {
         
         return false;
@@ -108,6 +156,7 @@ class PendaftaranResource extends Resource
             'index' => Pages\ListPendaftarans::route('/'),
             'create' => Pages\CreatePendaftaran::route('/create'),
             'edit' => Pages\EditPendaftaran::route('/{record}/edit'),
+            'view' => Pages\ViewPendaftaran::route('/{record}'),
         ];
     }
 
