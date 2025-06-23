@@ -30,15 +30,15 @@ public static function form(Form $form): Form
         Select::make('role')
             ->options([
                 'admin_organisasi' => 'Admin Organisasi',
-                'super_admin' => 'Super Admin',
-                'mahasiswa' => 'Mahasiswa', // Optional tampilkan
             ])
             ->default('admin_organisasi')
             ->required(),
         Select::make('jurusan_id')
-            ->relationship('jurusan', 'nama')
-            ->label('Jurusan')
-            ->required(),
+    ->relationship('jurusan', 'nama')
+    ->label('Jurusan')
+    ->nullable() // tambahkan ini supaya bisa kosong
+    ->hint('Kosongkan jika organisasi bersifat umum '),
+
         TextInput::make('nim')->visible(fn ($get) => $get('role') === 'mahasiswa'),
         TextInput::make('no_hp')->tel(),
         TextInput::make('password')
@@ -96,9 +96,14 @@ public static function form(Form $form): Form
 public static function getEloquentQuery(): Builder
 {
     return parent::getEloquentQuery()
-        ->where('role', 'admin_organisasi')
-        ->whereHas('organisasi'); // hanya yang sudah punya organisasi
+        ->where('role', 'admin_organisasi');
+        // ->whereHas('organisasi'); 
 }
+public static function getNavigationLabel(): string
+{
+    return 'Admin Organisasi'; // ganti sesuai kebutuhan
+}
+
 
 
 }

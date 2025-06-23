@@ -47,7 +47,9 @@ class User extends Authenticatable
     }
      public function jurusan()
     {
-        return $this->belongsTo(Jurusan::class);
+        return $this->belongsTo(Jurusan::class)->withDefault([
+        'nama' => 'Umum',
+    ]);
     }
 
     public function organisasi()

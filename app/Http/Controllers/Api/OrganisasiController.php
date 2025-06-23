@@ -9,15 +9,23 @@ use Illuminate\Http\Request;
 class OrganisasiController extends Controller
 {
     // List semua organisasi
-    public function index()
-    {
-        $organisasis = Organisasi::with('divisis')->get();
+   public function index(Request $request)
+{
+    $user = $request->user(); // atau Auth::user()
 
-        return response()->json([
-            'success' => true,
-            'data' => $organisasis,
-        ]);
+    $organisasi = Organisasi::query();
+
+    // Kalau user role-nya mahasiswa → filter berdasarkan jurusan_id
+    if ($user->role === 'mahasiswa') {
+        $organisasi->where(function ($query) use ($user) {
+            $query->where('jurusan_id', $user->jurusan_id)
+                  ->orWhereNull('jurusan_id'); // Organisasi umum (UKM)
+        });
     }
+
+    return response()->json($organisasi->get());
+}
+
 
     // Detail satu organisasi
     public function show($id)

@@ -13,6 +13,8 @@ use App\Http\Controllers\Api\UserController;
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [UserController::class, 'profile']);
     Route::put('/user/update', [UserController::class, 'update']);
+    Route::post('/user/upload-photo', [UserController::class, 'uploadPhoto'])->middleware('auth:sanctum');
+
 });
 
 // Register & Login
@@ -20,12 +22,12 @@ Route::post('/register', [RegisterController::class, 'register']);
 Route::post('/login', [LoginController::class, 'login']);
 
 // Organisasi
-Route::get('/organisasi', [OrganisasiController::class, 'index']);
+Route::middleware('auth:sanctum')->get('/organisasi', [OrganisasiController::class, 'index']);
 Route::get('/organisasi/{id}', [OrganisasiController::class, 'show']);
 Route::get('/organisasi/{id}/divisi', [OrganisasiController::class, 'divisi']);
 
 // Pendaftaran
-Route::post('/pendaftaran', [PendaftaranController::class, 'store']);
+Route::middleware('auth:sanctum')->post('/pendaftaran', [PendaftaranController::class, 'store']);
 Route::get('/pendaftaran/{user_id}', [PendaftaranController::class, 'showByUserId']);
 Route::put('/pendaftaran/{id}', [PendaftaranController::class, 'update']);
 Route::put('/pendaftaran/seleksi/{id}', [PendaftaranController::class, 'seleksi']);

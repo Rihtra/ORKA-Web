@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Models\User;
+use Filament\Forms\Get;
 use Filament\Forms;
 use Filament\Forms\Components\RichEditor;
 use Filament\Tables;
@@ -29,14 +31,54 @@ class OrganisasiResource extends Resource
      $user = auth()->user();
    if ($user->role === 'super_admin') {
         return $form->schema([
-            TextInput::make('nama'),
-            Select::make('jurusan_id')->relationship('jurusan', 'nama'),
-            Select::make('admin_user_id')->relationship('adminUser', 'name'),
+          TextInput::make('nama'),
+          Select::make('tipe')
+            ->label('Tipe Organisasi')
+            ->options([
+                'ukm' => 'Umum',
+                'himpunan' => 'Khusus (Sesuai Jurusan)',
+            ])
+            ->required()
+            ->reactive(),
+
+Select::make('admin_user_id')
+    ->label('Admin Organisasi')
+    ->options(function (Get $get) {
+        $usedAdminIds = Organisasi::query()
+            ->when($get('id'), fn ($query, $id) => $query->where('id', '!=', $id))
+            ->pluck('admin_user_id')
+            ->filter()
+            ->toArray();
+
+        return User::where('role', 'admin_organisasi')
+            ->whereNotIn('id', $usedAdminIds)
+            ->pluck('name', 'id');
+    })
+    ->searchable()
+    ->required()
+    ->reactive()
+    ->afterStateHydrated(function ($component, $state) {
+        // Kalau sedang edit dan admin_id ini sudah kepakai, tetap tampilkan
+        $admin = User::find($state);
+        if ($admin) {
+            $component->options([$admin->id => $admin->name] + $component->getOptions());
+        }
+    }),
+
+Select::make('jurusan_id')
+            ->label('Jurusan')
+            ->relationship('jurusan', 'nama')
+            ->nullable()
+            ->relationship('jurusan', 'nama')
+            ->visible(fn (Get $get) => $get('tipe') === 'himpunan')
+            ->required(fn (Get $get) => $get('tipe') === 'himpunan'),
+
         ]);
     }
 
     return $form->schema([
         FileUpload::make('logo'),
+        Textarea::make('deskripsi'),
         Textarea::make('visi'),
         Textarea::make('misi'),
         RichEditor::make('syarat'),
@@ -48,7 +90,7 @@ class OrganisasiResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('nama')->label('Nama Organisasi')->searchable(),
+            Tables\Columns\TextColumn::make('nama')->label('Nama Organisasi')->searchable(),
             Tables\Columns\TextColumn::make('jurusan.nama')->label('Jurusan')->sortable(),
             Tables\Columns\TextColumn::make('adminUser.name')->label('Admin'),
             ])

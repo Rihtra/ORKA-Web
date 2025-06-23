@@ -8,12 +8,14 @@ class Organisasi extends Model
 {
     protected $fillable = [
         'nama', 'jurusan_id', 'admin_user_id',
-        'deskripsi', 'logo', 'visi', 'misi', 'syarat'
+        'deskripsi', 'logo', 'visi', 'misi', 'syarat','tipe',
     ];
 
     public function jurusan()
     {
-        return $this->belongsTo(Jurusan::class);
+        return $this->belongsTo(Jurusan::class)->withDefault([
+        'nama' => 'Umum',
+    ]);
     }
 
     public function admin()

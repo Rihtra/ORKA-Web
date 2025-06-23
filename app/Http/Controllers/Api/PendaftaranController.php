@@ -13,6 +13,10 @@ class PendaftaranController extends Controller
 {
     public function store(Request $request)
     {
+        $user = $request->user(); // Ambil pengguna dari token Sanctum
+    if (!$user) {
+        return response()->json(['message' => 'Unauthenticated'], 401);
+    }
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
             'organisasi_id' => 'required|exists:organisasis,id',
