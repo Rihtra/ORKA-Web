@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\API\LoginController;
 use App\Http\Controllers\API\RegisterController;
+use App\Http\Controllers\GoogleAuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\OrganisasiController;
@@ -19,6 +20,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Register & Login
 Route::post('/register', [RegisterController::class, 'register']);
+Route::post('/verify-otp', [RegisterController::class, 'verifyOtp']);
 Route::post('/login', [LoginController::class, 'login']);
 
 // Organisasi
@@ -36,3 +38,6 @@ Route::put('/pendaftaran/seleksi/{id}', [PendaftaranController::class, 'seleksi'
 Route::get('/coba', function () {
     return response()->json(['pesan' => 'melayu jalan jawa pun jalan']);
 });
+Route::get('auth/google/redirect', [GoogleAuthController::class, 'redirect']);
+Route::get('auth/google/callback', [GoogleAuthController::class, 'callback']);
+

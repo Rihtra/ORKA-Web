@@ -12,52 +12,48 @@ use Illuminate\Validation\ValidationException;
 class PendaftaranController extends Controller
 {
     public function store(Request $request)
-    {
-        $user = $request->user(); // Ambil pengguna dari token Sanctum
+{
+    $user = $request->user(); // Ambil pengguna dari token Sanctum
     if (!$user) {
         return response()->json(['message' => 'Unauthenticated'], 401);
     }
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'organisasi_id' => 'required|exists:organisasis,id',
-            'divisi_id' => 'required|exists:divisis,id',
-            'alasan' => 'required|string',
-            'cv' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:2048',
-            'nama' => 'required|string|max:255',
-            'nim' => 'required|string|max:100',
-            'prodi' => 'required|string|max:255',
-            'nomor_wa' => 'required|string|max:20',
-            'semester' => 'required|string|max:10',
-        ]);
 
+    $validated = $request->validate([
+        'user_id' => 'required|exists:users,id',
+        'organisasi_id' => 'required|exists:organisasis,id',
+        'divisi_id' => 'nullable|exists:divisis,id',
+        'alasan' => 'required|string',
+        'cv' => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:2048',
+        'nama' => 'required|string|max:255',
+        'nim' => 'required|string|max:100',
+        'prodi' => 'required|string|max:255',
+        'nomor_wa' => 'required|string|max:20',
+        'semester' => 'required|string|max:10',
+    ]);
+    
+
+
+    try {
         // Simpan file CV
-        if ($request->hasFile('cv')) {
-            $cvPath = $request->file('cv')->store('cv', 'public');
-        } else {
-            throw ValidationException::withMessages(['cv' => 'File CV wajib diunggah.']);
-        }
-         $validated['status'] = 'pending'; // default status
+        $cvPath = $request->file('cv')->store('cv', 'public');
+        $validated['cv'] = $cvPath;
+        $validated['status'] = 'pending';
 
         // Simpan data pendaftaran
-        $pendaftaran = Pendaftaran::create([
-            'user_id' => $validated['user_id'],
-            'nama' => $validated['nama'],
-            'nim' => $validated['nim'],
-            'prodi' => $validated['prodi'],
-            'nomor_wa' => $validated['nomor_wa'],
-            'semester' => $validated['semester'],
-            'alasan' => $validated['alasan'],
-            'cv' => $cvPath,
-            'status' => 'pending',
-            'divisi_id' => $validated['divisi_id'],
-            'organisasi_id' => $validated['organisasi_id'],
-        ]);
+        $pendaftaran = Pendaftaran::create($validated);
 
         return response()->json([
             'message' => 'Pendaftaran berhasil dikirim!',
             'data' => $pendaftaran,
         ], 201);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Gagal menyimpan pendaftaran',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
+
     public function showByUserId($user_id)
 {
     $pendaftaran = Pendaftaran::with(['organisasi', 'divisi'])
@@ -84,18 +80,29 @@ public function update(Request $request, $id)
         'prodi' => 'required|string',
         'nomor_wa' => 'required|string',
         'semester' => 'required|string',
+        'status' => 'required|in:pending,diterima,ditolak',
     ]);
+
     if ($request->hasFile('cv')) {
         $validated['cv'] = $request->file('cv')->store('cv');
     }
 
+    // Simpan data utama
     $pendaftaran->update($validated);
+
+    // Kalau status = diterima, masukkan ke organisasi_user
+    if ($validated['status'] === 'diterima') {
+        if (! $pendaftaran->user->organisasis->contains($pendaftaran->organisasi_id)) {
+            $pendaftaran->user->organisasis()->attach($pendaftaran->organisasi_id, ['role' => 'Anggota']);
+        }
+    }
 
     return response()->json([
         'message' => 'Pendaftaran berhasil diperbarui',
-        'data' => $pendaftaran,
+        'data' => $pendaftaran->load('user.organisasis'), // biar kelihatan
     ]);
 }
+
 public function seleksi(Request $request, $id)
 {
     $pendaftaran = Pendaftaran::findOrFail($id);

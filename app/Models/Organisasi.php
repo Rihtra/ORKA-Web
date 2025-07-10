@@ -10,6 +10,12 @@ class Organisasi extends Model
         'nama', 'jurusan_id', 'admin_user_id',
         'deskripsi', 'logo', 'visi', 'misi', 'syarat','tipe',
     ];
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'organisasi_user')
+                    ->withPivot('role')
+                    ->withTimestamps();
+    }
 
     public function jurusan()
     {

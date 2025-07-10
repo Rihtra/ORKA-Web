@@ -12,15 +12,39 @@ use Illuminate\Support\Facades\Log;
 class UserController extends Controller
 {
     // Ambil profil user yang sedang login
-    public function profile(Request $request)
+   public function profile(Request $request)
 {
-    $user = $request->user()->load('jurusan');
+    $user = $request->user()->load('jurusan', 'organisasis');
+    $organisasiData = $user->organisasis->map(function ($organisasi) {
+        return [
+            'id' => $organisasi->id,
+            'nama' => $organisasi->nama,
+            'pivot' => [
+                'role' => $organisasi->pivot->role,
+            ],
+        ];
+    });
 
     return response()->json([
         'success' => true,
-        'data' => $user,
+        'message' => 'Profil pengguna berhasil diambil',
+        'data' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'nim' => $user->nim,
+            'email' => $user->email,
+            'no_hp' => $user->no_hp,
+            'semester' => $user->semester,
+            'jurusan' => [
+            'id' => $user->jurusan->id,
+            'nama' => $user->jurusan->nama,
+        ],
+            'foto' => $user->foto,
+            'organisasi' => $organisasiData,
+        ]
     ]);
 }
+
 
 public function update(Request $request)
 {
@@ -72,7 +96,12 @@ public function uploadPhoto(Request $request)
         'success' => false,
         'message' => 'Tidak ada file foto',
     ], 400);
+
+    
 }
 
+
+
 }
+
 

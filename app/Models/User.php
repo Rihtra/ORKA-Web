@@ -55,10 +55,17 @@ class User extends Authenticatable
     public function organisasi()
     {
         return $this->hasOne(Organisasi::class, 'admin_user_id');
+        
     }
 
     public function pendaftaran()
     {
         return $this->hasMany(Pendaftaran::class);
     }
+    public function organisasis()
+      {
+          return $this->belongsToMany(Organisasi::class, 'organisasi_user')
+                      ->withPivot('role')
+                      ->withTimestamps();
+      }
 }

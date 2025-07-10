@@ -36,5 +36,10 @@ class Pendaftaran extends Model
     {
         return $this->belongsTo(Divisi::class);
     }
+    public function user()
+{
+    return $this->belongsTo(\App\Models\User::class);
+}
+
 }
 
