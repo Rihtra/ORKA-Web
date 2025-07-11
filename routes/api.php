@@ -13,7 +13,7 @@ use App\Http\Controllers\Api\UserController;
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [UserController::class, 'profile']);
-    Route::put('/user/update', [UserController::class, 'update']);
+    Route::put('/user/update', [UserController::class, 'updateAccount'])->middleware('auth:sanctum');
     Route::post('/user/upload-photo', [UserController::class, 'uploadPhoto'])->middleware('auth:sanctum');
 
 });
@@ -22,6 +22,10 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::post('/register', [RegisterController::class, 'register']);
 Route::post('/verify-otp', [RegisterController::class, 'verifyOtp']);
 Route::post('/login', [LoginController::class, 'login']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [UserController::class, 'logout']);
+});
 
 // Organisasi
 Route::middleware('auth:sanctum')->get('/organisasi', [OrganisasiController::class, 'index']);

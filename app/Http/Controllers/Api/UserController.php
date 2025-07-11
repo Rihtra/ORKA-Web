@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 
 class UserController extends Controller
@@ -73,6 +74,42 @@ public function update(Request $request)
         'data' => $user->load('jurusan'),
     ]);
 }
+public function updateAccount(Request $request)
+    {
+        $user = Auth::user();
+
+        $validator = Validator::make($request->all(), [
+            'no_hp' => 'nullable|string|max:20',
+            'password' => 'nullable|string|min:8|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()
+            ], 422);
+        }
+
+        $data = [];
+        if ($request->has('no_hp')) {
+            $data['no_hp'] = $request->no_hp;
+        }
+        if ($request->has('password')) {
+            $data['password'] = Hash::make($request->password);
+        }
+
+        if (!empty($data)) {
+            $user->update($data);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Akun berhasil diperbarui',
+            'data' => [
+                'no_hp' => $user->no_hp,
+            ]
+        ]);
+    }
 public function uploadPhoto(Request $request)
 {
     $user = Auth::user();
@@ -99,6 +136,16 @@ public function uploadPhoto(Request $request)
 
     
 }
+public function logout(Request $request)
+    {
+        // Hapus semua token user yang sedang login
+        $request->user()->tokens()->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Berhasil logout',
+        ], 200);
+    }
 
 
 

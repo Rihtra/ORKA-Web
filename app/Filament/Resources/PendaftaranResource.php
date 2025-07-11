@@ -40,7 +40,6 @@ class PendaftaranResource extends Resource
                 ->label('Divisi yang Dipilih')
                 ->relationship('divisi', 'nama')
                 ->disabled(),
-
             FileUpload::make('cv')
                 ->label('CV / Foto Mahasiswa')
                 ->image()
@@ -49,20 +48,19 @@ class PendaftaranResource extends Resource
                 ->previewable(true)
                 ->downloadable()
                 ->disabled(),
-
             Select::make('status')
                 ->options([
                     'pending' => 'Pending',
+                    'wawancara' => 'Wawancara', // New status
                     'diterima' => 'Diterima',
                     'ditolak' => 'Ditolak',
                 ])
                 ->disabled(),
-
             DateTimePicker::make('jadwal_wawancara')
                 ->label('Jadwal Wawancara')
-                ->visible(fn ($record) => $record?->status === 'diterima')
-                ->required(fn ($record) => $record?->status === 'diterima')
-                ->disabled(fn ($record) => $record?->status !== 'diterima'),
+                ->visible(fn ($record) => $record?->status === 'wawancara') // Show for wawancara
+                ->required(fn ($record) => $record?->status === 'wawancara')
+                ->disabled(fn ($record) => $record?->status !== 'wawancara'),
         ]);
     }
 
@@ -78,6 +76,7 @@ class PendaftaranResource extends Resource
                     'diterima' => 'success',
                     'ditolak' => 'danger',
                     'pending' => 'gray',
+                    'wawancara' => 'warning', // New status color
                 }),
                 TextColumn::make('divisi.nama')
                     ->label('Divisi')
@@ -87,6 +86,7 @@ class PendaftaranResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')->options([
                     'pending' => 'Pending',
+                    'wawancara' => 'Wawancara', // New status
                     'diterima' => 'Diterima',
                     'ditolak' => 'Ditolak',
                 ]),
@@ -94,14 +94,12 @@ class PendaftaranResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make(),
-
                 Tables\Actions\Action::make('Tolak')
                     ->color('danger')
                     ->icon('heroicon-m-x-circle')
                     ->requiresConfirmation()
                     ->action(fn (Model $record) => $record->update(['status' => 'ditolak']))
-                    ->visible(fn (Model $record) => $record->status === 'menunggu' || $record->status === 'pending'),
-
+                    ->visible(fn (Model $record) => in_array($record->status, ['pending', 'wawancara'])), // Allow rejection from wawancara
                 Tables\Actions\Action::make('Terima')
                     ->label('Terima & Atur Jadwal')
                     ->color('success')
@@ -113,25 +111,45 @@ class PendaftaranResource extends Resource
                     ])
                     ->action(function (Model $record, array $data) {
                         $record->update([
-                            'status' => 'diterima',
+                            'status' => 'wawancara', // Set to wawancara instead of diterima
                             'jadwal_wawancara' => $data['jadwal_wawancara'],
                         ]);
-
-                        // ✅ Tambahkan ke organisasi sebagai anggota jika belum ada
-                        if (! $record->user->organisasis->contains($record->organisasi_id)) {
+                    })
+                    ->modalHeading('Konfirmasi Penerimaan & Atur Jadwal')
+                    ->requiresConfirmation()
+                    ->visible(fn (Model $record) => $record->status === 'pending'),
+                Tables\Actions\Action::make('SelesaiWawancara')
+                    ->label('Selesai Wawancara')
+                    ->color('success')
+                    ->icon('heroicon-m-check-circle')
+                    ->form([
+                        Select::make('status')
+                            ->label('Hasil Wawancara')
+                            ->options([
+                                'diterima' => 'Diterima',
+                                'ditolak' => 'Ditolak',
+                            ])
+                            ->required(),
+                    ])
+                    ->action(function (Model $record, array $data) {
+                        $record->update([
+                            'status' => $data['status'],
+                        ]);
+                        if ($data['status'] === 'diterima' && !$record->user->organisasis->contains($record->organisasi_id)) {
                             $record->user->organisasis()->attach($record->organisasi_id, [
                                 'role' => 'Anggota',
                             ]);
                         }
                     })
-                    ->modalHeading('Konfirmasi Penerimaan & Atur Jadwal')
+                    ->modalHeading('Konfirmasi Hasil Wawancara')
                     ->requiresConfirmation()
-                    ->visible(fn (Model $record) => $record->status === 'pending' || $record->status === 'menunggu'),
+                    ->visible(fn (Model $record) => $record->status === 'wawancara'),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
+
 
     public static function canCreate(): bool
     {
