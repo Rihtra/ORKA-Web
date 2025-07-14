@@ -20,6 +20,8 @@ class UserResource extends Resource
     protected static ?string $model = User::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationLabel = 'Kelola Admin';
+    protected static ?string $pluralModelLabel = 'Kelola Admin';
 
    // app/Filament/Resources/UserResource.php
 public static function form(Form $form): Form

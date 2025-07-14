@@ -9,6 +9,8 @@ use Filament\Resources\Pages\EditRecord;
 class EditUser extends EditRecord
 {
     protected static string $resource = UserResource::class;
+        protected static ?string $navigationLabel = 'Edit Admin Organisasi';
+
 
     protected function getHeaderActions(): array
     {

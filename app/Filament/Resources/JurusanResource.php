@@ -18,6 +18,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class JurusanResource extends Resource
 {
     protected static ?string $model = Jurusan::class;
+    protected static ?string $navigationLabel = 'Kelola Jurusan';
+    protected static ?string $pluralModelLabel = 'Kelola Jurusan';
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 

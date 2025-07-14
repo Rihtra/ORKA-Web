@@ -18,6 +18,9 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class DivisiResource extends Resource
 {
     protected static ?string $model = Divisi::class;
+    protected static ?string $navigationLabel = 'Kelola Divisi';
+    protected static ?string $pluralModelLabel = 'Kelola Divisi';
+
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 

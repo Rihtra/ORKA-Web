@@ -42,6 +42,6 @@ Route::put('/pendaftaran/seleksi/{id}', [PendaftaranController::class, 'seleksi'
 Route::get('/coba', function () {
     return response()->json(['pesan' => 'melayu jalan jawa pun jalan']);
 });
-Route::get('auth/google/redirect', [GoogleAuthController::class, 'redirect']);
-Route::get('auth/google/callback', [GoogleAuthController::class, 'callback']);
+Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('auth.google.redirect');
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
 

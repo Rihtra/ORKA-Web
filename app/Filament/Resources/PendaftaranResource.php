@@ -25,7 +25,10 @@ class PendaftaranResource extends Resource
 {
     protected static ?string $model = Pendaftaran::class;
     protected static ?string $navigationIcon = 'heroicon-o-user-plus';
+    
     protected static ?string $navigationLabel = 'Pendaftaran Mahasiswa';
+
+    protected static ?string $pluralModelLabel = 'Pendaftaran Mahasiswa';
 
     public static function form(Form $form): Form
     {

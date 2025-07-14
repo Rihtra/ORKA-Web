@@ -26,6 +26,8 @@ use App\Filament\Resources\OrganisasiResource\RelationManagers;
 class OrganisasiResource extends Resource
 {
     protected static ?string $model = Organisasi::class;
+    protected static ?string $navigationLabel = 'Kelola Organisasi';
+    protected static ?string $pluralModelLabel = 'Kelola Organisasi';
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
